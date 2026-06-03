@@ -1,0 +1,16 @@
+{
+  "name": "calculator-qa",
+  "version": "1.0.0",
+  "description": "End-to-end QA test suite for the RBI Scientific Calculator",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "test:ci": "playwright test --reporter=html,list"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}
