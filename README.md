@@ -222,3 +222,88 @@ Automated across Chromium, Firefox, WebKit, and a mobile viewport (Pixel 7) via 
 
 HTML + JUnit reports per run (CI artifact), defects logged with the template in `defect-report.md` (severity/priority, exact key sequence to reproduce, expected vs actual, spec reference C1–C3 where relevant).
 
+
+
+
+
+# Test Case Catalogue — Scientific Calculator
+
+Every functional case is also machine-readable in `tests/data/*.json` (one row = one automated test). This catalogue is the human view for review and traceability. Priorities: **P0** release-blocking, **P1** important, **P2** nice-to-have. Technique key: EP (equivalence), BVA (boundary), DT (decision table), ST (state), EG (error guessing).
+
+## A. Basic arithmetic — `arithmetic.json`
+
+| ID | Title | Tech | Pri | Input (keys) | Expected |
+|----|-------|------|-----|--------------|----------|
+| AR-01 | Addition | EP | P0 | `7 + 8 =` | 15 |
+| AR-02 | Subtraction | EP | P0 | `9 − 4 =` | 5 |
+| AR-03 | Multiplication | EP | P0 | `6 × 7 =` | 42 |
+| AR-04 | Division (exact) | EP | P0 | `8 ÷ 2 =` | 4 |
+| AR-05 | Division (fractional) | EP | P1 | `9 ÷ 4 =` | 2.25 |
+| AR-06 | Precedence × before + | DT | P0 | `2 + 3 × 4 =` | 14 |
+| AR-07 | Parentheses override | DT | P0 | `( 2 + 3 ) × 4 =` | 20 |
+| AR-08 | Nested parentheses | DT | P1 | `( ( 1 + 2 ) × 3 ) =` | 9 |
+| AR-09 | Decimal addition | EP | P0 | `1 . 5 + 2 . 5 =` | 4 |
+| AR-10 | Decimal multiplication | EP | P1 | `0 . 5 × 0 . 5 =` | 0.25 |
+| AR-11 | Chained additions | ST | P1 | `1 + 2 + 3 + 4 =` | 10 |
+| AR-12 | Negative result | EP | P1 | `3 − 8 =` | −5 |
+| AR-13 | Leading unary minus | EG | P2 | `− 5 + 8 =` | 3 |
+| AR-14 | Multiply by zero | BVA | P1 | `1 2 3 × 0 =` | 0 |
+| AR-15 | Large multiplication | BVA | P2 | `999999 × 999999 =` | 999998000001 |
+
+## B. Scientific functions — `functions.json` (spec: degrees, log base-10)
+
+| ID | Title | Tech | Pri | Input (keys) | Expected (±1e-9) |
+|----|-------|------|-----|--------------|------------------|
+| FN-01 | sin(30°) | EP | P0 | `sin ( 3 0 ) =` | 0.5 |
+| FN-02 | sin(90°) boundary | BVA | P0 | `sin ( 9 0 ) =` | 1 |
+| FN-03 | sin(0°) | BVA | P1 | `sin ( 0 ) =` | 0 |
+| FN-04 | cos(0°) | BVA | P0 | `cos ( 0 ) =` | 1 |
+| FN-05 | cos(60°) | EP | P1 | `cos ( 6 0 ) =` | 0.5 |
+| FN-06 | cos(90°)→0 | BVA | P1 | `cos ( 9 0 ) =` | 0 |
+| FN-07 | tan(45°) | EP | P1 | `tan ( 4 5 ) =` | 1 |
+| FN-08 | tan(0°) | BVA | P1 | `tan ( 0 ) =` | 0 |
+| FN-09 | √9 | EP | P0 | `√ ( 9 ) =` | 3 |
+| FN-10 | √16 | EP | P1 | `√ ( 1 6 ) =` | 4 |
+| FN-11 | √2 irrational | EP | P1 | `√ ( 2 ) =` | 1.41421356… |
+| FN-12 | √0 boundary | BVA | P1 | `√ ( 0 ) =` | 0 |
+| FN-13 | log(100) | EP | P0 | `log ( 1 0 0 ) =` | 2 |
+| FN-14 | log(1000) | EP | P1 | `log ( 1 0 0 0 ) =` | 3 |
+| FN-15 | log(1)→0 | BVA | P1 | `log ( 1 ) =` | 0 |
+| FN-16 | log(10)→1 | BVA | P1 | `log ( 1 0 ) =` | 1 |
+| FN-17 | √9 + 1 | DT | P1 | `√ ( 9 ) + 1 =` | 4 |
+| FN-18 | 2 × √9 | DT | P2 | `2 × √ ( 9 ) =` | 6 |
+
+## C. Edge cases & error handling — `edge-cases.json`
+
+Expected outcome is a **safe non-numeric/error state**, never a misleading finite number.
+
+| ID | Title | Tech | Pri | Input (keys) | Expected behaviour |
+|----|-------|------|-----|--------------|--------------------|
+| ED-01 | Divide by zero | EG | P0 | `5 ÷ 0 =` | Error or Infinity |
+| ED-02 | √ of negative | EG | P0 | `√ ( − 4 ) =` | Error or NaN |
+| ED-03 | log(0) | BVA | P1 | `log ( 0 ) =` | Error or −Infinity |
+| ED-04 | log(negative) | EG | P1 | `log ( − 5 ) =` | Error or NaN |
+| ED-05 | tan(90°) asymptote | BVA | P1 | `tan ( 9 0 ) =` | Error / very large |
+| ED-06 | Unbalanced paren | EG | P0 | `( 2 + 3 =` | Error, no crash |
+| ED-07 | Consecutive operators | EG | P1 | `5 + + 3 =` | Error / rejected |
+| ED-08 | Double decimal | EG | P1 | `1 . 2 . 3 =` | Error / 2nd `.` rejected |
+| ED-09 | Equals, no input | EG | P2 | `=` | No-op or 0 |
+| ED-10 | Leading operator | EG | P2 | `× 5 =` | Error / rejected |
+| ED-11 | Trailing operator | EG | P1 | `5 + =` | Error / incomplete |
+
+## D. UI, display & state — `ui-behavior.spec.ts`
+
+| ID | Title | Tech | Pri | Notes |
+|----|-------|------|-----|-------|
+| UI-01 | All controls present | ST | P0 | Smoke: every documented button renders |
+| UI-02 | `C` clears display | ST | P0 | Display returns to empty/0 |
+| UI-03 | Clean display formatting | ST | P1 | `0.1+0.2` must not show IEEE-754 tail |
+| UI-04 | Numeric correctness behind display | EP | P1 | `0.1+0.2 ≈ 0.3` within tolerance |
+| UI-05 | Fresh calc after `=` | ST | P2 | New digits start a new expression |
+
+## E. Exploratory charters (timeboxed, logged separately)
+
+1. Rapid/again input — mash digits and operators; watch for dropped/duplicated input.
+2. Very long expression — does the display overflow, truncate, or wrap?
+3. Keyboard parity — do physical keys mirror on-screen buttons?
+4. Accessibility pass — focus order, button names, contrast (WCAG smoke).
