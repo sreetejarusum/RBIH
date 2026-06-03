@@ -54,7 +54,7 @@ export class CalculatorPage {
     this.page = page;
     this.display = page.locator('#display');
 
-    this.clearBtn = page.getByRole('button', { name: 'C' });
+    this.clearBtn = page.getByRole('button', { name: 'C', exact: true });
     this.equalsBtn = page.getByRole('button', { name: '=' });
     this.openParenBtn = page.getByRole('button', { name: '(' });
     this.closeParenBtn = page.getByRole('button', { name: ')' });
